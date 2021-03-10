@@ -14,6 +14,7 @@ import uk.ac.bris.cs.scotlandyard.model.ScotlandYard.*;
  * Stage 1: Complete this class
  */
 public final class MyGameStateFactory implements Factory<GameState> {
+	testing tesing
 
 	@Nonnull @Override public GameState build(
 			GameSetup setup,
