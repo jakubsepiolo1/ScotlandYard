@@ -35,6 +35,8 @@ public final class MyGameStateFactory implements Factory<GameState> {
 								 final ImmutableList<LogEntry> log,
 								 final Player mrX,
 								 final List<Player> detectives){
+				if (mrX == null){throw new NullPointerException();}
+
 			this.setup = setup;
 			this.remaining = remaining;
 			this.log = log;
