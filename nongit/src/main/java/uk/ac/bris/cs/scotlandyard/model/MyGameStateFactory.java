@@ -1,14 +1,13 @@
 package uk.ac.bris.cs.scotlandyard.model;
 
 import com.google.common.collect.ImmutableList;
-
-import javax.annotation.Nonnull;
-
 import com.google.common.collect.ImmutableSet;
+import java.util.*;
+import javax.annotation.Nonnull;
 import uk.ac.bris.cs.scotlandyard.model.Board.GameState;
-import uk.ac.bris.cs.scotlandyard.model.ScotlandYard.Factory;
-
-import java.util.Optional;
+import uk.ac.bris.cs.scotlandyard.model.Move.*;
+import uk.ac.bris.cs.scotlandyard.model.Piece.*;
+import uk.ac.bris.cs.scotlandyard.model.ScotlandYard.*;
 
 /**
  * cw-model
