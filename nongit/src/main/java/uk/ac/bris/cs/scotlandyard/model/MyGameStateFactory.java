@@ -7,6 +7,7 @@ import com.google.common.graph.ImmutableValueGraph;
 import com.google.common.graph.MutableValueGraph;
 import com.google.common.graph.ValueGraphBuilder;
 import java.util.*;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import uk.ac.bris.cs.scotlandyard.model.Board.GameState;
 import uk.ac.bris.cs.scotlandyard.model.Move.*;
@@ -28,9 +29,21 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			Player mrX,
 			ImmutableList<Player> detectives) {
 
-		return new MyGameState(setup, ImmutableSet.of(MrX.MRX), ImmutableList.of(), mrX, detectives);
+		//very bad but it works somehow
+		ImmutableSet<Piece> test = ImmutableSet.of(mrX.piece());
+		Set<Piece> test2 = new HashSet<Piece>();
+		for(Player d : detectives){
+			test2.add(d.piece());
+
+		}
+		ImmutableSet<Piece> test3 = test2.stream().collect(ImmutableSet.toImmutableSet());
+		ImmutableSet<Piece> test4 = ImmutableSet.<Piece>builder().addAll(test).addAll(test3).build();
+
+
+		return new MyGameState(setup, test4, ImmutableList.of(), mrX, detectives);
 
 	}
+
 	private final class MyGameState implements GameState {
 		private GameSetup setup;
 		private ImmutableSet<Piece> remaining;
@@ -133,6 +146,11 @@ public final class MyGameStateFactory implements Factory<GameState> {
 		@Nonnull
 		@Override
 		public Optional<TicketBoard> getPlayerTickets(Piece piece) {
+			ImmutableMap<Ticket, Integer> test = mrX.tickets();
+
+			for(Map.Entry<Ticket, Integer> entry : test.entrySet()){
+
+			}
 			return Optional.empty();
 		}
 
