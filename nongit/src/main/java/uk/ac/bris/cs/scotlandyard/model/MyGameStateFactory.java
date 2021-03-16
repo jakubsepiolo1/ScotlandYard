@@ -22,6 +22,9 @@ import static uk.ac.bris.cs.scotlandyard.model.ScotlandYard.Ticket.*;
  * cw-model
  * Stage 1: Complete this class
  */
+
+
+
 public final class MyGameStateFactory implements Factory<GameState> {
 
 	@Nonnull @Override public GameState build(
@@ -80,7 +83,14 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			}
 			return ImmutableSet.copyOf(singleMoves);
 		}
+		private final class MyTicketBoard implements TicketBoard{
 
+			@Override
+			public int getCount(@Nonnull Ticket ticket) {
+				return 0;
+				//last 2 tests here
+			}
+		}
 
 		private MyGameState(final GameSetup setup, final ImmutableSet<Piece> remaining, final ImmutableList<LogEntry> log, final Player mrX, final List<Player> detectives)
 		{
@@ -147,7 +157,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 		@Override
 		public Optional<TicketBoard> getPlayerTickets(Piece piece) {
 			ImmutableMap<Ticket, Integer> test = mrX.tickets();
-
+			TicketBoard something;
 			for(Map.Entry<Ticket, Integer> entry : test.entrySet()){
 
 			}
