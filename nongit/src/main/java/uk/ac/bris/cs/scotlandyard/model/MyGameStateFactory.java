@@ -232,33 +232,17 @@ public final class MyGameStateFactory implements Factory<GameState> {
 		@Nonnull
 		@Override
 		public ImmutableSet<Move> getAvailableMoves() {
-			Move moves = ImmutableSet.of(new Move(){
+			Set<Move> moveSet = new HashSet<Move>();
+			for(Move test: makeSingleMoves(setup, detectives, mrX, mrX.location())){
+				moveSet.add(test);
+			}
+			for(Move test: makeDoubleMoves(setup, detectives, mrX, mrX.location())){
+				moveSet.add(test);
+			}
+			ImmutableSet<Move> collectSet = moveSet.stream().collect(ImmutableSet.toImmutableSet());
+			ImmutableSet<Move> finalSet = ImmutableSet.<Move>builder().addAll(collectSet).build();
 
-				@Nonnull
-				@Override
-				public Piece commencedBy() {
-					return mrX.piece();
-				}
-
-				@Nonnull
-				@Override
-				public Iterable<Ticket> tickets() {
-
-					return null;
-				}
-
-				@Override
-				public int source() {
-					return mrX.location();
-				}
-
-				@Override
-				public <T> T visit(Visitor<T> visitor) {
-					return null;
-				}
-			};
-			ImmutableSet<Move> moves2 = ImmutableSet.of(moves);
-			return moves2;
+			return finalSet;
 		}
 
 		@Override
