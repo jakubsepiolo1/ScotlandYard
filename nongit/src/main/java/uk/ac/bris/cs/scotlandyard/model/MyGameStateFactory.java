@@ -33,17 +33,17 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			ImmutableList<Player> detectives) {
 
 		//very bad but it works somehow
-		ImmutableSet<Piece> test = ImmutableSet.of(mrX.piece());
-		Set<Piece> test2 = new HashSet<Piece>();
+		ImmutableSet<Piece> mrXSet = ImmutableSet.of(mrX.piece());
+		Set<Piece> detectiveSet = new HashSet<Piece>();
 		for(Player d : detectives){
-			test2.add(d.piece());
+			detectiveSet.add(d.piece());
 
 		}
-		ImmutableSet<Piece> test3 = test2.stream().collect(ImmutableSet.toImmutableSet());
-		ImmutableSet<Piece> test4 = ImmutableSet.<Piece>builder().addAll(test).addAll(test3).build();
+		ImmutableSet<Piece> collectSet = detectiveSet.stream().collect(ImmutableSet.toImmutableSet());
+		ImmutableSet<Piece> finalSet = ImmutableSet.<Piece>builder().addAll(mrXSet).addAll(collectSet).build();
 
 
-		return new MyGameState(setup, test4, ImmutableList.of(), mrX, detectives);
+		return new MyGameState(setup, finalSet, ImmutableList.of(), mrX, detectives);
 
 	}
 
@@ -56,13 +56,14 @@ public final class MyGameStateFactory implements Factory<GameState> {
 		private ImmutableList<Player> everyone;
 		private ImmutableSet<Move> moves;
 		private ImmutableSet<Piece> winner;
+
 		private ImmutableSet<SingleMove> makeSingleMoves(GameSetup setup, List<Player> detectives, Player player, int source)
 		{
 			final var singleMoves = new ArrayList<SingleMove>();
 			for(int destination : setup.graph.adjacentNodes(source)) {
 				for(Player detective: detectives){
 					if(detective.location() == destination){
-						// need to fix this
+						System.out.println("Test1");
 						break;
 					}
 
@@ -72,6 +73,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 				//
 				for(Transport t : setup.graph.edgeValueOrDefault(source,destination,ImmutableSet.of())) {
 					if(player.has(t.requiredTicket())){
+						System.out.println("Test2");
 						SingleMove newMove = new SingleMove(player.piece(), source, t.requiredTicket(), destination);
 
 						singleMoves.add(newMove);
@@ -81,12 +83,55 @@ public final class MyGameStateFactory implements Factory<GameState> {
 				// TODO consider the rules of secret moves here
 				//  add moves to the destination via a secret ticket if there are any left with the player
 			}
+			System.out.println("Test3");
 			return ImmutableSet.copyOf(singleMoves);
 		}
+		private ImmutableSet<DoubleMove> makeDoubleMoves(GameSetup setup, List<Player> detectives, Player player, int source)
+		{
+			final var doubleMoves = new ArrayList<DoubleMove>();
+			for(int destination1 : setup.graph.adjacentNodes(source)) {
+				for(Player detectives1: detectives){
+					if(detectives1.location() == destination1){
+						break;
+					}
+					else{
+						for(int destination2: setup.graph.adjacentNodes(destination1)){
+							for(Player detectives2: detectives){
+								if(detectives2.location() == destination2){
+									break;
+								}
+							}
+							//
+							for(Transport t1 : setup.graph.edgeValueOrDefault(source,destination1,ImmutableSet.of())) {
+								if(player.has(t1.requiredTicket())){
+									for(Transport t2 : setup.graph.edgeValueOrDefault(destination1,destination2,ImmutableSet.of())){
+										if (player.has(t2.requiredTicket())){
+											System.out.println("Test2");
+											DoubleMove newMove = new DoubleMove(player.piece(), source, t1.requiredTicket(), destination1, t2.requiredTicket(), destination2);
 
+											doubleMoves.add(newMove);
+										}
+									}
+
+
+								}
+
+							}
+						}
+					}
+
+
+				}
+
+
+				// TODO consider the rules of secret moves here
+				//  add moves to the destination via a secret ticket if there are any left with the player
+			}
+			System.out.println("Test3");
+			return ImmutableSet.copyOf(doubleMoves);
+		}
 		private MyGameState(final GameSetup setup, final ImmutableSet<Piece> remaining, final ImmutableList<LogEntry> log, final Player mrX, final List<Player> detectives)
 		{
-
 			if (detectives == null) {throw new NullPointerException();}
 			if (mrX == null) {throw new NullPointerException();}
 			if (!(mrX.isMrX())) {throw new IllegalArgumentException();}
@@ -187,11 +232,38 @@ public final class MyGameStateFactory implements Factory<GameState> {
 		@Nonnull
 		@Override
 		public ImmutableSet<Move> getAvailableMoves() {
-			return null;
+			Move moves = ImmutableSet.of(new Move(){
+
+				@Nonnull
+				@Override
+				public Piece commencedBy() {
+					return mrX.piece();
+				}
+
+				@Nonnull
+				@Override
+				public Iterable<Ticket> tickets() {
+
+					return null;
+				}
+
+				@Override
+				public int source() {
+					return mrX.location();
+				}
+
+				@Override
+				public <T> T visit(Visitor<T> visitor) {
+					return null;
+				}
+			};
+			ImmutableSet<Move> moves2 = ImmutableSet.of(moves);
+			return moves2;
 		}
 
 		@Override
 		public GameState advance(Move move) {
+			if(!moves.contains(move)) throw new IllegalArgumentException("Illegal move: "+move);
 			return null;
 		}
 
