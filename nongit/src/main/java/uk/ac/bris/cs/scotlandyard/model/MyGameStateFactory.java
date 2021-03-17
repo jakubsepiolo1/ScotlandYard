@@ -83,14 +83,6 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			}
 			return ImmutableSet.copyOf(singleMoves);
 		}
-		private final class MyTicketBoard implements TicketBoard{
-
-			@Override
-			public int getCount(@Nonnull Ticket ticket) {
-				return 0;
-				//last 2 tests here
-			}
-		}
 
 		private MyGameState(final GameSetup setup, final ImmutableSet<Piece> remaining, final ImmutableList<LogEntry> log, final Player mrX, final List<Player> detectives)
 		{
@@ -156,12 +148,28 @@ public final class MyGameStateFactory implements Factory<GameState> {
 		@Nonnull
 		@Override
 		public Optional<TicketBoard> getPlayerTickets(Piece piece) {
-			ImmutableMap<Ticket, Integer> test = mrX.tickets();
-			TicketBoard something;
-			for(Map.Entry<Ticket, Integer> entry : test.entrySet()){
-
+			Player playerTest = mrX;
+			if (piece.isMrX()){ }
+			else{
+				for(Player playerLoop : detectives)
+					if(playerLoop.piece() == piece){
+						playerTest = playerLoop;
+					}
 			}
-			return Optional.empty();
+			Player finalPlayer = playerTest;
+			TicketBoard mytickets = new TicketBoard() {
+				@Override
+				public int getCount(@Nonnull Ticket ticket) {
+					return finalPlayer.tickets().get(ticket);
+				}
+			};
+			if (remaining.contains(piece)){
+				return Optional.of(mytickets);
+			}
+			else{
+				return Optional.empty();
+			}
+
 		}
 
 		@Nonnull
