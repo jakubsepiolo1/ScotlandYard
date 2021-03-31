@@ -1,21 +1,16 @@
 package uk.ac.bris.cs.scotlandyard.model;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.graph.ImmutableValueGraph;
-import com.google.common.graph.MutableValueGraph;
-import com.google.common.graph.ValueGraphBuilder;
+
 import java.util.*;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+
+import com.google.common.collect.Lists;
 import uk.ac.bris.cs.scotlandyard.model.Board.GameState;
 import uk.ac.bris.cs.scotlandyard.model.Move.*;
-import uk.ac.bris.cs.scotlandyard.model.Piece.*;
 import uk.ac.bris.cs.scotlandyard.model.ScotlandYard.*;
 
-import static uk.ac.bris.cs.scotlandyard.model.ScotlandYard.DETECTIVE_LOCATIONS;
-import static uk.ac.bris.cs.scotlandyard.model.ScotlandYard.STANDARD24ROUNDS;
 import static uk.ac.bris.cs.scotlandyard.model.ScotlandYard.Ticket.*;
 
 /**
@@ -59,6 +54,9 @@ public final class MyGameStateFactory implements Factory<GameState> {
 
 		private ImmutableSet<SingleMove> makeSingleMoves(GameSetup setup, List<Player> detectives, Player player, int source)
 		{
+			if(!getWinner().isEmpty()){
+				return ImmutableSet.of();
+			}
 			final var singleMoves = new ArrayList<SingleMove>();
 			for(int destination : setup.graph.adjacentNodes(source)) {
 				for (Player detective : detectives) {
@@ -108,6 +106,9 @@ public final class MyGameStateFactory implements Factory<GameState> {
 		private ImmutableSet<DoubleMove> makeDoubleMoves(GameSetup setup, List<Player> detectives, Player player, int source)
 		{
 			final var doubleMoves = new ArrayList<DoubleMove>();
+			if(!getWinner().isEmpty()){
+				return ImmutableSet.of();
+			}
 			if(!setup.rounds.contains(false)){
 				return ImmutableSet.of();
 			}
@@ -208,6 +209,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			this.mrX = mrX;
 			this.detectives = detectives;
 			this.winner = ImmutableSet.of();
+
 		}
 
 
@@ -306,7 +308,6 @@ public final class MyGameStateFactory implements Factory<GameState> {
 
 			ImmutableSet<Move> collectSet = moveSet.stream().collect(ImmutableSet.toImmutableSet());
 			ImmutableSet<Move> finalSet = ImmutableSet.<Move>builder().addAll(collectSet).build();
-
 			return finalSet;
 		}
 
@@ -323,36 +324,83 @@ public final class MyGameStateFactory implements Factory<GameState> {
 				}
 				ImmutableSet<Piece> collectSet = detectiveSet.stream().collect(ImmutableSet.toImmutableSet());
 				ImmutableSet<Piece> finalSet = ImmutableSet.<Piece>builder().addAll(mrXSet).addAll(collectSet).build();
-				return new MyGameState(setup, finalSet,  getMrXTravelLog(), mrX, detectives);
+				remaining = finalSet;
 			}
-			if(moves!=null && !moves.contains(move)) throw new IllegalArgumentException("Illegal move: "+move);
-			//By default we move mrX, then we loop over to check if we actually need to move a different piece
+			//Find out who is moving, by default, we assume it is mrX
 			Player pieceMoving = mrX;
 			for(Player playerLoop : detectives){
 				if(playerLoop.piece() == move.commencedBy()){
 					pieceMoving = playerLoop;
 				}
 		}
-			////////////////////////////
-			//Yet to figure this out but its the final part of this
 			Visitor sometest = new Visitor<>(){
 
 				@Override
-				public Object visit(SingleMove move) {
-					System.out.println("1: " + move.destination);
-					return move;
+				public int[] visit(SingleMove move) {
+					int[] destinations = new int[]{move.destination};
+					return destinations;
 				}
 
 				@Override
-				public Object visit(DoubleMove move) {
-					System.out.println("1: " + move.destination1 + " 2: " + move.destination2);
-					return move;
+				public int[] visit(DoubleMove move) {
+					int[] destinations = new int[]{move.destination1, move.destination2};
+					return destinations;
 				}
 			};
-			move.visit(sometest);
-			//pieceMoved.at(10);
-			//////////////////////////
+			//This creates a simple array, it will contain either 1 int, or 2 int, depending on the move type, those ints are the destination of each move
+			int[] movingDestinations = (int[]) move.visit(sometest);
+			for(int newLocation : movingDestinations){
+				pieceMoving = mrX;
+				////////////////////////////
+				//For now this will do, its just making sure we're moving the same piece again but it is "bad programming" technically
+				for(Player playerLoop : detectives) {
+					if (playerLoop.piece() == move.commencedBy()) {
+						pieceMoving = playerLoop;
+					}
+				}
+				//////////////////////////////////////
+				if(pieceMoving == mrX){
+					mrX = pieceMoving.at(newLocation);
+				}
+				else{
+					//When we move a detective, the only way to update it's location is to recreate the entire list of detectives, and put in the new detective
+					Set<Player> detectiveSet = new HashSet<Player>();
+					for(Player playerLoop : detectives){
+							if(playerLoop.piece() != move.commencedBy()){
+							detectiveSet.add(playerLoop);
+						}
+						else{
+							detectiveSet.add(pieceMoving.at(newLocation));
 
+						}
+					}
+					List<Player> finalSet = ImmutableList.<Player>builder().addAll(detectiveSet).build();
+					detectives = finalSet;
+					for(Player playerLoop : detectives){
+						if (playerLoop == pieceMoving){System.out.println("New piece: " + playerLoop.location());}
+
+
+					}
+
+				}
+
+			}
+			//We have to check if after a valid move has been completed, whether someone has won, because a detective may have moved to MrX's location
+			for(Player d : detectives){
+				if (mrX.location() == d.location()){
+					Set<Piece> detectiveSet = new HashSet<Piece>();
+					for(Player d2 : detectives){
+						detectiveSet.add(d2.piece());
+
+					}
+					ImmutableSet<Piece> collectSet = detectiveSet.stream().collect(ImmutableSet.toImmutableSet());
+					ImmutableSet<Piece> finalSet = ImmutableSet.<Piece>builder().addAll(collectSet).build();
+					winner = finalSet;
+					//We have to return the CURRENT game state otherwise if you return a new one, the winner set will reset to empty (this=current object)
+					return this;
+				}
+
+			}
 			//This part updates the remaining pieces that have yet to make a move this round
 			Set<Piece> remainingPiecesSet = new HashSet<Piece>();
 			for(Piece actualPiecesRemaining : remaining){
@@ -371,6 +419,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 				return new MyGameState(setup, finalSetRemaining,  currentLog, mrX, detectives);
 			};
 			//If it is not MrX we can simply return a new game state with the current log we already have and the players that have yet to make a move this round
+
 			return new MyGameState(setup, finalSetRemaining, getMrXTravelLog(), mrX, detectives);
 		}
 
