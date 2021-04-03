@@ -29,7 +29,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 
 		//very bad but it works somehow
 		ImmutableSet<Piece> mrXSet = ImmutableSet.of(mrX.piece());
-		Set<Piece> detectiveSet = new HashSet<Piece>();
+		Set<Piece> detectiveSet = new HashSet<>();
 		for(Player d : detectives){
 			detectiveSet.add(d.piece());
 
@@ -96,9 +96,8 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			this.detectives = detectives;
 			this.roundNum = roundNum;
 
-			if (remaining.isEmpty()) {
-				roundNum++;
-			}
+			if (remaining.isEmpty()) {roundNum++;}
+
 
 
 			int i = 0;
@@ -113,8 +112,6 @@ public final class MyGameStateFactory implements Factory<GameState> {
 				this.winner = ImmutableSet.of();
 
 			}
-
-
 		}
 
 
@@ -289,13 +286,6 @@ public final class MyGameStateFactory implements Factory<GameState> {
 
 
 
-
-
-
-
-
-
-
 		@Nonnull
 		@Override
 		public ImmutableSet<Move> getAvailableMoves() {
@@ -342,11 +332,8 @@ public final class MyGameStateFactory implements Factory<GameState> {
 		public GameState advance(Move move) {
 
 
-
-
 			//If all pieces have moved this round, we can start a new round
 			if (remaining.isEmpty()) {
-
 
 
 				//Get all the pieces in the game again and re-add them to the remaining pieces as we are making a new round
@@ -359,6 +346,9 @@ public final class MyGameStateFactory implements Factory<GameState> {
 				ImmutableSet<Piece> collectSet = detectiveSet.stream().collect(ImmutableSet.toImmutableSet());
 				ImmutableSet<Piece> finalSet = ImmutableSet.<Piece>builder().addAll(mrXSet).addAll(collectSet).build();
 				remaining = finalSet;
+
+
+
 			}
 			//Find out who is moving, by default, we assume it is mrX
 			Player pieceMoving = mrX;
@@ -387,10 +377,9 @@ public final class MyGameStateFactory implements Factory<GameState> {
 
 
 
-
-
-
 			Visitor sometest = new Visitor<>(){
+
+
 
 				@Override
 				public int[] visit(SingleMove move) {
@@ -404,6 +393,9 @@ public final class MyGameStateFactory implements Factory<GameState> {
 					return destinations;
 				}
 			};
+
+			if (!getAvailableMoves().contains(move)) {throw new IllegalArgumentException("Illegal move: "+move);}
+
 			//This creates a simple array, it will contain either 1 int, or 2 int, depending on the move type, those ints are the destination of each move
 			int[] movingDestinations = (int[]) move.visit(sometest);
 			for(int newLocation : movingDestinations){
@@ -425,16 +417,16 @@ public final class MyGameStateFactory implements Factory<GameState> {
 					//When we move a detective, the only way to update it's location is to recreate the entire list of detectives, and put in the new detective
 					Set<Player> detectiveSet = new HashSet<Player>();
 					for(Player playerLoop : detectives){
-							if(playerLoop.piece() != move.commencedBy()){
+						if(playerLoop.piece() != move.commencedBy()){
 							detectiveSet.add(playerLoop);
 						}
-						else{
-							if ((pieceMoving.has(BUS) || pieceMoving.has(UNDERGROUND) || pieceMoving.has(TAXI) || pieceMoving.has(DOUBLE))) {
-									detectiveSet.add(pieceMoving.at(newLocation).use(move.tickets()));
-									mrX.give(move.tickets());
+						else {
+							Player minusTicket = pieceMoving.use(move.tickets().iterator().next());
+							Player newPiece = minusTicket.at(newLocation);
+							detectiveSet.add(newPiece);
 
-								}
-							else {detectiveSet.add(pieceMoving);}
+							//detectiveSet.add(pieceMoving.at(newLocation).use(move.tickets().iterator().next()));
+							//mrX.give(move.tickets().iterator().next());
 
 						}
 					}
@@ -463,9 +455,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 				}
 			}
 
-
-
-
+			//If all detectives have no tickets mrX wins
 			int i = 0;
 			for (Player d : detectives) {
 				if (d.has(BUS) || d.has(UNDERGROUND) || d.has(TAXI) || d.has(DOUBLE)) {
@@ -492,12 +482,34 @@ public final class MyGameStateFactory implements Factory<GameState> {
 				}
 			}
 			ImmutableSet<Piece> finalSetRemaining = ImmutableSet.<Piece>builder().addAll(remainingPiecesSet).build();
+
 			//If the piece moving is MRX we need to add it to his log of moves
 			if(move.commencedBy() == mrX.piece()){
-				ImmutableList<LogEntry> newLog = ImmutableList.of(LogEntry.hidden(move.tickets().iterator().next()));
-				ImmutableList<LogEntry> currentLog = ImmutableList.<LogEntry>builder().addAll(getMrXTravelLog()).addAll(newLog).build();;
+
+				List<LogEntry> x = new ArrayList<>();
+				Iterator<Ticket> ts = move.tickets().iterator();
+				int iter = 0;
+				while ((ts.hasNext()) && (iter < 2)) {
+					Ticket t = ts.next();
+					if (setup.rounds.get(roundNum) == false) {
+						x.add(LogEntry.hidden(t));
+						iter++;
+					}
+					else {
+						x.add(LogEntry.reveal(t, mrX.location()));
+						iter++;
+					}
+				}
+				ImmutableList<LogEntry> logList = ImmutableList.<LogEntry>builder().addAll(x).build();
+				ImmutableList<LogEntry> currentLog = ImmutableList.<LogEntry>builder().addAll(getMrXTravelLog()).addAll(logList).build();
+
+
+				//ImmutableList<LogEntry> newLog = ImmutableList.of(LogEntry.hidden(move.tickets().iterator().next()));
+				//ImmutableList<LogEntry> currentLog = ImmutableList.<LogEntry>builder().addAll(getMrXTravelLog()).addAll(newLog).build();
+
+
 				return new MyGameState(setup, finalSetRemaining,  currentLog, mrX, detectives);
-			};
+			}
 			//If it is not MrX we can simply return a new game state with the current log we already have and the players that have yet to make a move this round
 
 			return new MyGameState(setup, finalSetRemaining, getMrXTravelLog(), mrX, detectives);
