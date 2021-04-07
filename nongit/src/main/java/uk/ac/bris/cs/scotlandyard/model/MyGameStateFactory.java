@@ -376,19 +376,22 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			}
 
 
-			Visitor sometest = new Visitor<>(){
+			Visitor sometest = new Visitor<Map<Integer, Ticket>>(){
 
 
 
 				@Override
-				public int[] visit(SingleMove move) {
-					int[] destinations = new int[]{move.destination};
+				public Map<Integer, Ticket> visit(SingleMove move) {
+					Map<Integer, Ticket> destinations = new LinkedHashMap<>();
+					destinations.put(move.destination, move.ticket);
 					return destinations;
 				}
 
 				@Override
-				public int[] visit(DoubleMove move) {
-					int[] destinations = new int[]{move.destination1, move.destination2};
+				public Map<Integer, Ticket> visit(DoubleMove move) {
+					Map<Integer, Ticket> destinations = new LinkedHashMap<>();
+					destinations.put(move.destination1, move.ticket1);
+					destinations.put(move.destination2, move.ticket2);
 					return destinations;
 				}
 			};
@@ -403,8 +406,8 @@ public final class MyGameStateFactory implements Factory<GameState> {
 
 
 			//This creates a simple array, it will contain either 1 int, or 2 int, depending on the move type, those ints are the destination of each move
-			int[] movingDestinations = (int[]) move.visit(sometest);
-			for(int newLocation : movingDestinations){
+			Map<Integer, Ticket>  movingDestinations = (Map<Integer, Ticket>) move.visit(sometest);
+			for(Map.Entry<Integer, Ticket> mapEntry : movingDestinations.entrySet()){
 				pieceMoving = mrX;
 				////////////////////////////
 				//For now this will do, its just making sure we're moving the same piece again but it is "bad programming" technically
@@ -416,7 +419,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 				//////////////////////////////////////
 				if(pieceMoving == mrX){
 						//only takes off single ticket for now
-						mrX = pieceMoving.at(newLocation).use(move.tickets().iterator().next());
+						mrX = pieceMoving.at(mapEntry.getKey()).use(mapEntry.getValue());
 				}
 				else {
 
@@ -427,9 +430,9 @@ public final class MyGameStateFactory implements Factory<GameState> {
 							detectiveSet.add(playerLoop);
 						}
 						else {
-							Player newDetective = pieceMoving.at(newLocation).use(move.tickets().iterator().next());
+							Player newDetective = pieceMoving.at(mapEntry.getKey()).use(mapEntry.getValue());
 							detectiveSet.add(newDetective);
-							mrX = mrX.give(move.tickets().iterator().next());
+							mrX = mrX.give(mapEntry.getValue());
 
 
 						}
