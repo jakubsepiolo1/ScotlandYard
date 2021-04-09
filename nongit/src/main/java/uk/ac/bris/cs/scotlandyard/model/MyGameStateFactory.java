@@ -105,7 +105,6 @@ public final class MyGameStateFactory implements Factory<GameState> {
 
 
 
-
 			int i = 0;
 			for (Player d : detectives) {
 				if (d.has(BUS) || d.has(UNDERGROUND) || d.has(TAXI) || d.has(DOUBLE)) {
@@ -145,13 +144,17 @@ public final class MyGameStateFactory implements Factory<GameState> {
 		@Override
 		public Optional<TicketBoard> getPlayerTickets(Piece piece) {
 			Player playerTest = mrX;
-			if (piece.isMrX()){ }
+			int i = 0;
+			if (piece.isMrX()) {i++;}
 			else {
-				for(Player playerLoop : detectives)
-					if(playerLoop.piece() == piece){
+				for(Player playerLoop : detectives) {
+					if (playerLoop.piece() == piece) {
 						playerTest = playerLoop;
+						i++;
 					}
+				}
 			}
+			if (i == 0) {return Optional.empty();}
 			Player finalPlayer = playerTest;
 			TicketBoard mytickets = new TicketBoard() {
 				@Override
@@ -159,13 +162,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 					return finalPlayer.tickets().get(ticket);
 				}
 			};
-			if (remaining.contains(piece)){
-				return Optional.of(mytickets);
-			}
-			else{
-				return Optional.empty();
-			}
-
+			return Optional.of(mytickets);
 		}
 
 		@Nonnull
@@ -173,7 +170,6 @@ public final class MyGameStateFactory implements Factory<GameState> {
 		public ImmutableList<LogEntry> getMrXTravelLog() {
 			return log;
 		}
-
 
 
 		private ImmutableSet<SingleMove> makeSingleMoves(GameSetup setup, List<Player> detectives, Player player, int source)
@@ -294,6 +290,10 @@ public final class MyGameStateFactory implements Factory<GameState> {
 		@Nonnull
 		@Override
 		public ImmutableSet<Move> getAvailableMoves() {
+			if (remaining.isEmpty() && getWinner().isEmpty()) {
+				SingleMove placehold = new SingleMove(mrX.piece(), 86, TAXI, 103);
+				return ImmutableSet.of(placehold);
+			}
 			//if is a winner, return empty set
 			if (!getWinner().isEmpty()) {
 				return ImmutableSet.of();
@@ -407,26 +407,29 @@ public final class MyGameStateFactory implements Factory<GameState> {
 
 			//This creates a simple array, it will contain either 1 int, or 2 int, depending on the move type, those ints are the destination of each move
 			Map<Integer, Ticket>  movingDestinations = (Map<Integer, Ticket>) move.visit(sometest);
-			for(Map.Entry<Integer, Ticket> mapEntry : movingDestinations.entrySet()){
+			for (Map.Entry<Integer, Ticket> mapEntry : movingDestinations.entrySet()){
 				pieceMoving = mrX;
 				////////////////////////////
 				//For now this will do, its just making sure we're moving the same piece again but it is "bad programming" technically
-				for(Player playerLoop : detectives) {
+				for (Player playerLoop : detectives) {
 					if (playerLoop.piece() == move.commencedBy()) {
 						pieceMoving = playerLoop;
 					}
 				}
 				//////////////////////////////////////
-				if(pieceMoving == mrX){
-						//only takes off single ticket for now
-						mrX = pieceMoving.at(mapEntry.getKey()).use(mapEntry.getValue());
+				if (pieceMoving == mrX){
+					if (movingDestinations.isEmpty()) {
+						winner = buildDetectiveWinnerSet();
+						return this;
+					}
+					mrX = pieceMoving.at(mapEntry.getKey()).use(mapEntry.getValue());
 				}
-				else {
 
+				else {
 					//Moving a detective, taking off tickets and recreating detective set
 					Set<Player> detectiveSet = new HashSet<Player>();
-					for(Player playerLoop : detectives){
-						if(playerLoop.piece() != move.commencedBy()){
+					for (Player playerLoop : detectives){
+						if (playerLoop.piece() != move.commencedBy()){
 							detectiveSet.add(playerLoop);
 						}
 						else {
@@ -437,6 +440,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 
 						}
 					}
+
 					List<Player> finalSet = ImmutableList.<Player>builder().addAll(detectiveSet).build();
 					detectives = finalSet;
 					for (Player playerLoop : detectives) {
@@ -446,13 +450,22 @@ public final class MyGameStateFactory implements Factory<GameState> {
 				}
 
 			}
+
+			//if double move take off ticket here
+			if (movingDestinations.size() == 2 && pieceMoving.isMrX()) {
+				mrX = mrX.use(DOUBLE);
+			}
+
 			//We have to check if after a valid move has been completed, whether someone has won, because a detective may have moved to MrX's location
-			for(Player d : detectives){
+			for (Player d : detectives){
 				if (mrX.location() == d.location()){
 					winner = buildDetectiveWinnerSet();
 					return this;
 				}
 			}
+
+
+
 
 			//Check whether after valid move detectives have cornered mrX
 			int nodeNum = setup.graph.degree(mrX.location());
@@ -472,7 +485,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			//If all detectives have no tickets mrX wins
 			int i = 0;
 			for (Player d : detectives) {
-				if (d.has(BUS) || d.has(UNDERGROUND) || d.has(TAXI) || d.has(DOUBLE)) {
+				if (d.has(BUS) || d.has(UNDERGROUND) || d.has(TAXI)) {
 					i++;
 					continue;
 				}
@@ -495,7 +508,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 
 			Set<Piece> remainingPiecesSet = new HashSet<Piece>();
 
-			for(Piece actualPiecesRemaining : remaining){
+			for (Piece actualPiecesRemaining : remaining){
 				for (Player d : detectives) {
 					if (actualPiecesRemaining != d.piece()) {continue;}
 					else {
@@ -503,9 +516,12 @@ public final class MyGameStateFactory implements Factory<GameState> {
 							continue;
 						}
 						else {
-
-							remainingPiecesSet.add(actualPiecesRemaining);
-
+							if (!d.has(UNDERGROUND) && !d.has(BUS) && !d.has(TAXI)) {
+								continue;
+							}
+							else {
+								remainingPiecesSet.add(actualPiecesRemaining);
+							}
 						}
 					}
 				}
@@ -519,27 +535,31 @@ public final class MyGameStateFactory implements Factory<GameState> {
 				List<LogEntry> x = new ArrayList<>();
 				Iterator<Ticket> ts = move.tickets().iterator();
 
-				int iter = 0;
-				while (ts.hasNext() && iter < 2) {
-					if (setup.rounds.get(roundNum) == true) {
-						Ticket t1 = ts.next();
-						if (ts.hasNext()) {
-							x.add(LogEntry.hidden(t1));
-							Ticket t2 = ts.next();
-							x.add(LogEntry.reveal(t2, mrX.location()));
-							iter = 2;
+				int k = 0;
+				for(Map.Entry<Integer, Ticket> mapEntry : movingDestinations.entrySet()) {
+					if (movingDestinations.size() == 2) {
+						if (setup.rounds.get(roundNum + k)) {
+							x.add(LogEntry.reveal(mapEntry.getValue(), mapEntry.getKey()));
+							k++;
 						}
 						else {
-							x.add(LogEntry.reveal(t1, mrX.location()));
-							iter++;
+							x.add(LogEntry.hidden(mapEntry.getValue()));
+							k++;
 						}
 					}
 					else {
-						Ticket t1 = ts.next();
-						x.add(LogEntry.hidden(t1));
-						iter++;
+						if (setup.rounds.get(roundNum + k)) {
+							x.add(LogEntry.reveal(mapEntry.getValue(), mapEntry.getKey()));
+						}
+						else {
+							x.add(LogEntry.hidden(mapEntry.getValue()));
+						}
 					}
 				}
+
+
+
+
 				ImmutableList<LogEntry> logList = ImmutableList.<LogEntry>builder().addAll(x).build();
 				ImmutableList<LogEntry> currentLog = ImmutableList.<LogEntry>builder().addAll(getMrXTravelLog()).addAll(logList).build();
 
