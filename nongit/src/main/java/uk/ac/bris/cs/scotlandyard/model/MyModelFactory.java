@@ -7,6 +7,8 @@ import javax.annotation.Nonnull;
 import com.google.common.collect.ImmutableSet;
 import javafx.beans.InvalidationListener;
 import uk.ac.bris.cs.scotlandyard.model.ScotlandYard.Factory;
+import uk.ac.bris.cs.scotlandyard.model.Board.GameState;
+import uk.ac.bris.cs.scotlandyard.ui.model.BoardViewProperty;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -24,21 +26,12 @@ public final class MyModelFactory implements Factory<Model>  {
 			Player mrX,
 			ImmutableList<Player> detectives) {
 
-		//very bad but it works somehow
-		ImmutableSet<Piece> mrXSet = ImmutableSet.of(mrX.piece());
-		Set<Piece> detectiveSet = new HashSet<>();
-		for(Player d : detectives){
-			detectiveSet.add(d.piece());
 
-		}
-		ImmutableSet<Piece> collectSet = detectiveSet.stream().collect(ImmutableSet.toImmutableSet());
-		ImmutableSet<Piece> finalSet = ImmutableSet.<Piece>builder().addAll(mrXSet).addAll(collectSet).build();
-
-		List<Observer> observers = new ArrayList<>();
-		Board.GameState gameState = new Board.GameState(setup, finalSet, ImmutableList.of(), mrX, detectives);
+		List<Model.Observer> observers = new ArrayList<Model.Observer>();
+		GameState state = new MyGameStateFactory().build(setup, mrX, detectives);
 
 
-		return new GameModel(gameState, observers);
+		return new GameModel(state, observers);
 	}
 
 
@@ -47,13 +40,19 @@ public final class MyModelFactory implements Factory<Model>  {
 		private Board.GameState state;
 		private List<Observer> observers;
 
-		private GameModel(Board.GameState state, final List<Observer> observers) {
+
+
+		private GameModel(Board.GameState state, List<Observer> observers) {
 			this.state = state;
 			this.observers = observers;
 		}
 
+
+
+
 		public Board getCurrentBoard() {
 			return getCurrentBoard();
+
 		}
 
 		public void registerObserver(Observer o) {
@@ -64,7 +63,7 @@ public final class MyModelFactory implements Factory<Model>  {
 
 		public void unregisterObserver(Observer o) {
 			if (o == null) {throw new NullPointerException();}
-			if (!getObservers().contains(0)) {throw new IllegalArgumentException();}
+			if (!getObservers().contains(o)) {throw new IllegalArgumentException();}
 			observers.remove(o);
 		}
 
@@ -76,10 +75,14 @@ public final class MyModelFactory implements Factory<Model>  {
 		public void chooseMove(Move move) {
 			state.advance(move);
 			if (state.getWinner().isEmpty()) {
-				//notify Event.MOVE_MADE
+				for (Observer o : observers) {
+					o.onModelChanged(getCurrentBoard(), Observer.Event.MOVE_MADE);
+				}
 			}
 			else {
-				//notify Event.GAME_OVER
+				for (Observer o : observers) {
+					o.onModelChanged(getCurrentBoard(), Observer.Event.GAME_OVER);
+				}
 			}
 		}
 
@@ -87,11 +90,6 @@ public final class MyModelFactory implements Factory<Model>  {
 
 
 	private final class Observer implements Model.Observer {
-		private Observer x;
-
-		Observer(Observer x) {
-			this.x = x;
-		}
 
 		 public void onModelChanged(Board board, Event event) {
 			System.out.println(event);
