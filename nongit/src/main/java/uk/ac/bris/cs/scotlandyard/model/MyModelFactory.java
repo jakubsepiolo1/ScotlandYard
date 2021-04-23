@@ -51,7 +51,7 @@ public final class MyModelFactory implements Factory<Model>  {
 
 
 		public Board getCurrentBoard() {
-			return getCurrentBoard();
+			return state;
 
 		}
 
@@ -73,7 +73,7 @@ public final class MyModelFactory implements Factory<Model>  {
 		}
 
 		public void chooseMove(Move move) {
-			state.advance(move);
+			state = state.advance(move);
 			if (state.getWinner().isEmpty()) {
 				for (Observer o : observers) {
 					o.onModelChanged(getCurrentBoard(), Observer.Event.MOVE_MADE);
@@ -87,14 +87,13 @@ public final class MyModelFactory implements Factory<Model>  {
 		}
 
 	}
-
-
 	private final class Observer implements Model.Observer {
 
-		 public void onModelChanged(Board board, Event event) {
-			System.out.println(event);
+		public void onModelChanged(Board board, Event event) {
+			System.out.println("is this ever used");
 		}
 	}
-}
 
+
+}
 
