@@ -27,7 +27,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			Player mrX,
 			ImmutableList<Player> detectives) {
 		Set<Piece> detectiveSet = new HashSet<>();
-		for(Player d : detectives){
+		for (Player d : detectives){
 			detectiveSet.add(d.piece());
 
 		}
@@ -59,7 +59,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 		{
 
 
-
+			//Game creation tests/checks
 			if (detectives == null) {throw new NullPointerException();}
 			if (mrX == null) {throw new NullPointerException();}
 			if (!(mrX.isMrX())) {throw new IllegalArgumentException();}
@@ -67,8 +67,8 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			for (Player d : detectives) {
 				if (d.isMrX()) {throw new IllegalArgumentException();}
 			}
-			String xcolour = (mrX.piece().webColour());
-			if (!(xcolour.equals("#000"))) {throw new IllegalArgumentException();}
+			String xColour = (mrX.piece().webColour());
+			if (!(xColour.equals("#000"))) {throw new IllegalArgumentException();}
 
 			for (int i=0; i < detectives.size()-1; i++) {
 				for (int j=1; j < detectives.size(); j++) {
@@ -142,7 +142,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			int i = 0;
 			if (piece.isMrX()) {i++;}
 			else {
-				for(Player playerLoop : detectives) {
+				for (Player playerLoop : detectives) {
 					if (playerLoop.piece() == piece) {
 						playerTest = playerLoop;
 						i++;
@@ -169,7 +169,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 
 		private ImmutableSet<SingleMove> makeSingleMoves(GameSetup setup, List<Player> detectives, Player player, int source)
 		{
-			if(!getWinner().isEmpty()){
+			if (!getWinner().isEmpty()){
 				return ImmutableSet.of();
 			}
 			final var singleMoves = new ArrayList<SingleMove>();
@@ -205,52 +205,52 @@ public final class MyGameStateFactory implements Factory<GameState> {
 		{
 			//Make sure enough rounds for double move to occur
 			int TotalRoundsLeft = 0;
-			for(Boolean roundsLeft : setup.rounds){
+			for (Boolean roundsLeft : setup.rounds){
 				if(roundsLeft){TotalRoundsLeft += 1;}
 			}
 			final var doubleMoves = new ArrayList<DoubleMove>();
-			if(!getWinner().isEmpty()){
+			if (!getWinner().isEmpty()){
 				return ImmutableSet.of();
 			}
-			if(TotalRoundsLeft < 2){
+			if (TotalRoundsLeft < 2){
 				return ImmutableSet.of();
 			}
-			if(!player.has(DOUBLE)){
+			if (!player.has(DOUBLE)){
 
 				return ImmutableSet.of();
 			}
-			for(int destination1 : setup.graph.adjacentNodes(source)) {
-				for(Player detectives1: detectives){
-					if(detectives1.location() == destination1){
+			for (int destination1 : setup.graph.adjacentNodes(source)) {
+				for (Player detectives1: detectives){
+					if (detectives1.location() == destination1) {
 						break;
 					}
 					else{
-						for(int destination2: setup.graph.adjacentNodes(destination1)){
-							for(Player detectives2: detectives){
-								if(detectives2.location() == destination2){
+						for (int destination2: setup.graph.adjacentNodes(destination1)) {
+							for(Player detectives2: detectives) {
+								if(detectives2.location() == destination2) {
 									break;
 								}
-								for(Transport t1 : setup.graph.edgeValueOrDefault(source,destination1,ImmutableSet.of())) {
-									for(Transport t2 : setup.graph.edgeValueOrDefault(destination1,destination2,ImmutableSet.of())){
-										if (player.hasAtLeast(SECRET, 2)){
+								for (Transport t1 : setup.graph.edgeValueOrDefault(source,destination1,ImmutableSet.of())) {
+									for (Transport t2 : setup.graph.edgeValueOrDefault(destination1,destination2,ImmutableSet.of())) {
+										if (player.hasAtLeast(SECRET, 2)) {
 											DoubleMove newMove = new DoubleMove(player.piece(), source, SECRET, destination1, SECRET, destination2);
 											doubleMoves.add(newMove);
 										}
-										if(player.has(SECRET)){
-											if(player.has(t1.requiredTicket())){
+										if (player.has(SECRET)){
+											if (player.has(t1.requiredTicket())) {
 												DoubleMove newMove = new DoubleMove(player.piece(), source, t1.requiredTicket(), destination1, SECRET, destination2);
 												doubleMoves.add(newMove);
 											}
-											if(player.has(t2.requiredTicket())){
+											if (player.has(t2.requiredTicket())) {
 												DoubleMove newMove = new DoubleMove(player.piece(), source, SECRET, destination1, t2.requiredTicket(), destination2);
 												doubleMoves.add(newMove);
 											}
 										}
-										if(t1.requiredTicket() == t2.requiredTicket() && player.hasAtLeast(t1.requiredTicket(), 2)){
+										if (t1.requiredTicket() == t2.requiredTicket() && player.hasAtLeast(t1.requiredTicket(), 2)) {
 											DoubleMove newMove = new DoubleMove(player.piece(), source, t1.requiredTicket(), destination1, t1.requiredTicket(), destination2);
 											doubleMoves.add(newMove);
 										}
-										if(player.has(t1.requiredTicket()) && player.has(t2.requiredTicket()) && t1.requiredTicket() != t2.requiredTicket()){
+										if (player.has(t1.requiredTicket()) && player.has(t2.requiredTicket()) && t1.requiredTicket() != t2.requiredTicket()) {
 											DoubleMove newMove = new DoubleMove(player.piece(), source, t1.requiredTicket(), destination1, t2.requiredTicket(), destination2);
 											doubleMoves.add(newMove);
 										}
@@ -309,9 +309,10 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			}
 		}
 
+		//returns new set of all detectives
 		private ImmutableSet<Piece> buildDetectiveWinnerSet() {
 			Set<Piece> detectiveSet = new HashSet<Piece>();
-			for(Player d : detectives){
+			for (Player d : detectives){
 				detectiveSet.add(d.piece());
 			}
 			ImmutableSet<Piece> collectSet = detectiveSet.stream().collect(ImmutableSet.toImmutableSet());
@@ -319,10 +320,11 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			return finalSet;
 		}
 
+		//returns new set of all detectives who still have tickets
 		private ImmutableSet<Piece> buildRemainingSet() {
 			ImmutableSet<Piece> mrXSet = ImmutableSet.of(mrX.piece());
 			Set<Piece> detectiveSet = new HashSet<Piece>();
-			for(Player d : detectives){
+			for (Player d : detectives){
 				if (d.has(BUS) || d.has(UNDERGROUND) || d.has(TAXI)) {
 					detectiveSet.add(d.piece());
 				}
@@ -332,9 +334,9 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			return finalSet;
 		}
 
-		private Player whoIsMoving(Move move){
-			for(Player playerLoop : detectives){
-				if(playerLoop.piece() == move.commencedBy()){
+		private Player whoIsMoving(Move move) {
+			for (Player playerLoop : detectives) {
+				if (playerLoop.piece() == move.commencedBy()) {
 					return playerLoop;
 				}
 			}
@@ -345,7 +347,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 		public GameState advance(Move move) {
 			if (!getAvailableMoves().contains(move)) {throw new IllegalArgumentException("Illegal move: "+move);}
 
-			Visitor VisitorMap = new Visitor<Map<Integer, Ticket>>(){
+			Visitor VisitorMap = new Visitor<Map<Integer, Ticket>>() {
 
 
 
@@ -375,7 +377,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			if (pieceMoving == mrX && getAvailableMoves().size() == 0){winner = buildDetectiveWinnerSet(); return this;}
 
 			//Moving pieces
-			for (Map.Entry<Integer, Ticket> mapEntry : movingDestinations.entrySet()){
+			for (Map.Entry<Integer, Ticket> mapEntry : movingDestinations.entrySet()) {
 				pieceMoving = whoIsMoving(move);
 				if (pieceMoving == mrX){
 					if (movingDestinations.isEmpty()) {
@@ -389,7 +391,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 					//Moving a detective, taking off tickets and recreating detective set
 					Set<Player> detectiveSet = new HashSet<Player>();
 					for (Player playerLoop : detectives){
-						if (playerLoop.piece() != move.commencedBy()){
+						if (playerLoop.piece() != move.commencedBy()) {
 							detectiveSet.add(playerLoop);
 						}
 						else {
@@ -409,8 +411,8 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			}
 
 			//We have to check if after a valid move has been completed, whether someone has won, because a detective may have moved to MrX's location
-			for (Player d : detectives){
-				if (mrX.location() == d.location()){
+			for (Player d : detectives) {
+				if (mrX.location() == d.location()) {
 					winner = buildDetectiveWinnerSet();
 					return this;
 				}
@@ -434,8 +436,8 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			//If all detectives have no tickets mrX wins
 			boolean DetectivesHaveTickets = true;
 			for (Player d : detectives) {
-				if(getPlayerTickets(d.piece()).isEmpty()){DetectivesHaveTickets = false;}
-				else{DetectivesHaveTickets = true; break;}
+				if (getPlayerTickets(d.piece()).isEmpty()){DetectivesHaveTickets = false;}
+				else {DetectivesHaveTickets = true; break;}
 			}
 			if (!DetectivesHaveTickets) {
 				winner = ImmutableSet.of(mrX.piece());
@@ -457,7 +459,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 				for (Player d : detectives) {
 					if (actualPiecesRemaining != d.piece()) {continue;}
 					else {
-						if (actualPiecesRemaining == pieceMoving.piece()){
+						if (actualPiecesRemaining == pieceMoving.piece()) {
 							continue;
 						}
 						else {
@@ -477,7 +479,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 				finalSetRemaining = buildRemainingSet();
 				remaining = finalSetRemaining;
 				//Here we can check if MrX even has any possible moves next turn, or if he has been "Checkmated" by detectives
-				if(getAvailableMoves().size() == 0){
+				if (getAvailableMoves().size() == 0) {
 					winner = buildDetectiveWinnerSet();
 					return this;
 				}
@@ -485,11 +487,11 @@ public final class MyGameStateFactory implements Factory<GameState> {
 
 
 			//Adding to mrXs Log for Reveal/Hidden rounds and doubles
-			if(move.commencedBy() == mrX.piece()){
+			if (move.commencedBy() == mrX.piece()) {
 				List<LogEntry> CurrentRoundEntry = new ArrayList<>();
 
 				int roundIncrement = 0;
-				for(Map.Entry<Integer, Ticket> mapEntry : movingDestinations.entrySet()) {
+				for (Map.Entry<Integer, Ticket> mapEntry : movingDestinations.entrySet()) {
 					//Double Move log entry
 					if (movingDestinations.size() == 2) {
 						if (setup.rounds.get(roundNum + roundIncrement)) {
